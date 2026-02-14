@@ -1,8 +1,7 @@
 // app/api/generate/route.js
-// Certificate generation with multi-provider email and custom message support
+// Certificate generation with Gmail email and custom message support
 
-import { db } from '@/lib/firebase';
-import { collection, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import { getAdminDb, FieldValue } from '@/lib/firebase-admin';
 import { sendEmail, canSend, getCapacity, generateCertificateEmail } from '@/lib/email-service';
 import QRCode from 'qrcode';
 
@@ -16,7 +15,7 @@ export async function POST(req) {
       organizerName,
       organizerEmail,
       templateData,
-      customMessage = '' // NEW: Custom message from organization
+      customMessage = ''
     } = await req.json();
 
     if (!participants || !eventName || !templateData) {
@@ -40,19 +39,20 @@ export async function POST(req) {
       }, { status: 429 });
     }
 
-    const batch = writeBatch(db);
+    const db = getAdminDb();
+    const batch = db.batch();
     const certificates = [];
     const currentDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric'
     });
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.certcat.xyz';
 
     // Create certificates
     for (const participant of validParticipants) {
       const name = participant.name.trim();
       const email = participant.email.trim();
 
-      const certRef = doc(collection(db, 'certificates'));
+      const certRef = db.collection('certificates').doc();
       const certificateId = certRef.id;
       const verificationUrl = `${appUrl}/verify/${certificateId}`;
 
@@ -91,8 +91,8 @@ export async function POST(req) {
         templateUrl: templateData.imageUrl,
         elements: processedElements,
         verificationUrl,
-        customMessage, // Store custom message with certificate
-        issuedAt: serverTimestamp(),
+        customMessage,
+        issuedAt: FieldValue.serverTimestamp(),
       });
 
       certificates.push({ id: certificateId, name, email, verificationUrl });
@@ -113,14 +113,13 @@ export async function POST(req) {
       const cert = certificates[i];
 
       try {
-        // Generate email with custom message
         const emailHtml = generateCertificateEmail({
           name: cert.name,
           eventName,
           certificateId: cert.id,
           verificationUrl: cert.verificationUrl,
           organizerName,
-          customMessage, // NEW: Include custom message in email
+          customMessage,
         });
 
         const result = await sendEmail({

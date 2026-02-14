@@ -2,8 +2,7 @@
 // Admin API for analytics and metrics
 
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/admin-middleware';
 import { logAdminAction } from '@/lib/admin-auth';
 import { AUDIT_TYPES } from '@/lib/admin-config';
@@ -11,20 +10,16 @@ import { AUDIT_TYPES } from '@/lib/admin-config';
 /**
  * GET /api/admin/analytics
  * Get system analytics and metrics
- *
- * Query params:
- * - period: 'day' | 'week' | 'month' | 'all' (default: 'month')
  */
 export async function GET(request) {
-  // Authenticate admin
   const auth = await requireAdminAuth(request);
   if (!auth.authorized) return auth.response;
 
   try {
+    const db = getAdminDb();
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'month';
 
-    // Calculate date range
     const now = new Date();
     let startDate;
     switch (period) {
@@ -42,14 +37,9 @@ export async function GET(request) {
         startDate = new Date(0);
     }
 
-    // Fetch all data (in production, use aggregations or separate collection)
-    const certificatesRef = collection(db, 'certificates');
-    const certificatesSnapshot = await getDocs(certificatesRef);
+    const certificatesSnapshot = await db.collection('certificates').get();
+    const templatesSnapshot = await db.collection('templates').get();
 
-    const templatesRef = collection(db, 'templates');
-    const templatesSnapshot = await getDocs(templatesRef);
-
-    // Process certificates
     const allCertificates = certificatesSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
@@ -61,29 +51,23 @@ export async function GET(request) {
       };
     });
 
-    // Filter by period
     const periodCertificates = allCertificates.filter(cert => {
       if (!cert.issuedAt) return false;
       return cert.issuedAt >= startDate;
     });
 
-    // Calculate metrics
     const totalCertificates = allCertificates.length;
     const periodCertificateCount = periodCertificates.length;
     const testCertificates = allCertificates.filter(c => c.isTest).length;
 
-    // Unique users (organizers)
     const allOrganizers = new Set(allCertificates.map(c => c.organizerEmail).filter(Boolean));
     const periodOrganizers = new Set(periodCertificates.map(c => c.organizerEmail).filter(Boolean));
 
-    // Unique events
     const allEvents = new Set(allCertificates.map(c => c.eventName).filter(Boolean));
     const periodEvents = new Set(periodCertificates.map(c => c.eventName).filter(Boolean));
 
-    // Templates
     const totalTemplates = templatesSnapshot.docs.length;
 
-    // Daily breakdown for the period
     const dailyData = {};
     periodCertificates.forEach(cert => {
       if (!cert.issuedAt) return;
@@ -96,7 +80,6 @@ export async function GET(request) {
       if (cert.organizerEmail) dailyData[dateKey].users.add(cert.organizerEmail);
     });
 
-    // Convert to array and format
     const dailyBreakdown = Object.entries(dailyData)
       .map(([date, data]) => ({
         date,
@@ -106,7 +89,6 @@ export async function GET(request) {
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Top organizers
     const organizerCounts = {};
     periodCertificates.forEach(cert => {
       if (cert.organizerEmail) {
@@ -119,7 +101,6 @@ export async function GET(request) {
       .sort((a, b) => b.certificateCount - a.certificateCount)
       .slice(0, 10);
 
-    // Top events
     const eventCounts = {};
     periodCertificates.forEach(cert => {
       if (cert.eventName) {
@@ -132,10 +113,7 @@ export async function GET(request) {
       .sort((a, b) => b.certificateCount - a.certificateCount)
       .slice(0, 10);
 
-    // Log the action
-    await logAdminAction(AUDIT_TYPES.VIEW_ANALYTICS, auth.session.email, {
-      period,
-    });
+    await logAdminAction(AUDIT_TYPES.VIEW_ANALYTICS, auth.session.email, { period });
 
     return NextResponse.json({
       success: true,
@@ -160,9 +138,6 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Admin analytics error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch analytics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to fetch analytics' }, { status: 500 });
   }
 }

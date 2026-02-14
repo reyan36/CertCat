@@ -1,8 +1,7 @@
 // app/api/test-certificate/route.js
 // Creates a temporary test certificate that expires in 1 hour
 
-import { db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { getAdminDb, FieldValue } from '@/lib/firebase-admin';
 import QRCode from 'qrcode';
 
 export async function POST(req) {
@@ -23,7 +22,7 @@ export async function POST(req) {
     const currentDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric'
     });
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.certcat.xyz';
 
     // Generate a test certificate ID with TEST prefix
     const testId = `TEST-${Date.now().toString(36).toUpperCase()}`;
@@ -58,10 +57,11 @@ export async function POST(req) {
     });
 
     // Calculate expiration time (1 hour from now)
-    const expiresAt = Timestamp.fromDate(new Date(Date.now() + 60 * 60 * 1000));
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    // Save test certificate with expiration
-    await setDoc(doc(db, 'certificates', testId), {
+    // Save test certificate with expiration using Admin SDK
+    const db = getAdminDb();
+    await db.collection('certificates').doc(testId).set({
       certificateId: testId,
       name: testName,
       email: 'test@example.com',
@@ -71,19 +71,19 @@ export async function POST(req) {
       templateUrl: templateData.imageUrl,
       elements: processedElements,
       verificationUrl,
-      issuedAt: serverTimestamp(),
+      issuedAt: FieldValue.serverTimestamp(),
       isTest: true,
       expiresAt: expiresAt,
     });
 
     console.log(`✅ Test certificate created: ${testId}`);
-    console.log(`⏰ Expires at: ${new Date(Date.now() + 60 * 60 * 1000).toISOString()}`);
+    console.log(`⏰ Expires at: ${expiresAt.toISOString()}`);
 
     return Response.json({
       success: true,
       certificateId: testId,
       verificationUrl,
-      expiresAt: expiresAt.toDate().toISOString(),
+      expiresAt: expiresAt.toISOString(),
       expiresIn: '1 hour',
     });
 

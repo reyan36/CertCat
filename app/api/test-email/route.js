@@ -2,8 +2,7 @@
 // Test Gmail email provider
 
 import nodemailer from 'nodemailer';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,12 +90,13 @@ export async function POST(request) {
 
     // Rate limiting: 5 test emails per user per day
     if (userId) {
+      const db = getAdminDb();
       const today = new Date().toDateString();
-      const rateLimitRef = doc(db, 'testEmailLimits', userId);
-      const rateLimitDoc = await getDoc(rateLimitRef);
+      const rateLimitRef = db.collection('testEmailLimits').doc(userId);
+      const rateLimitDoc = await rateLimitRef.get();
 
       let testCount = 0;
-      if (rateLimitDoc.exists()) {
+      if (rateLimitDoc.exists) {
         const data = rateLimitDoc.data();
         if (data.date === today) {
           testCount = data.count || 0;
@@ -112,7 +112,7 @@ export async function POST(request) {
       }
 
       // Update count
-      await setDoc(rateLimitRef, { date: today, count: testCount + 1 });
+      await rateLimitRef.set({ date: today, count: testCount + 1 });
     }
 
     if (!isGmailConfigured()) {
@@ -153,11 +153,12 @@ export async function POST(request) {
 }
 
 async function getTestCount(userId) {
+  const db = getAdminDb();
   const today = new Date().toDateString();
-  const rateLimitRef = doc(db, 'testEmailLimits', userId);
-  const rateLimitDoc = await getDoc(rateLimitRef);
+  const rateLimitRef = db.collection('testEmailLimits').doc(userId);
+  const rateLimitDoc = await rateLimitRef.get();
 
-  if (rateLimitDoc.exists()) {
+  if (rateLimitDoc.exists) {
     const data = rateLimitDoc.data();
     if (data.date === today) {
       return data.count || 0;

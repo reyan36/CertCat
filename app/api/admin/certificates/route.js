@@ -2,17 +2,7 @@
 // Admin API for certificate management
 
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  query,
-  getDocs,
-  orderBy,
-  limit as firestoreLimit,
-  doc,
-  deleteDoc,
-  getDoc,
-} from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { requireAdminAuth, getPaginationParams } from '@/lib/admin-middleware';
 import { logAdminAction } from '@/lib/admin-auth';
 import { AUDIT_TYPES } from '@/lib/admin-config';
@@ -20,29 +10,20 @@ import { AUDIT_TYPES } from '@/lib/admin-config';
 /**
  * GET /api/admin/certificates
  * List all certificates with filtering
- *
- * Query params:
- * - page: Page number
- * - limit: Items per page
- * - search: Search by recipient name, email, or event
- * - organizer: Filter by organizer email
- * - isTest: Filter test certificates ('true' | 'false')
  */
 export async function GET(request) {
-  // Authenticate admin
   const auth = await requireAdminAuth(request);
   if (!auth.authorized) return auth.response;
 
   try {
+    const db = getAdminDb();
     const { searchParams } = new URL(request.url);
     const { page, limit, offset } = getPaginationParams(searchParams);
     const search = searchParams.get('search')?.toLowerCase() || '';
     const organizerFilter = searchParams.get('organizer')?.toLowerCase() || '';
     const isTestFilter = searchParams.get('isTest');
 
-    // Fetch certificates
-    const certificatesRef = collection(db, 'certificates');
-    const certificatesSnapshot = await getDocs(certificatesRef);
+    const certificatesSnapshot = await db.collection('certificates').get();
 
     let certificates = certificatesSnapshot.docs.map(doc => {
       const data = doc.data();
@@ -60,7 +41,6 @@ export async function GET(request) {
       };
     });
 
-    // Apply filters
     if (search) {
       certificates = certificates.filter(cert =>
         cert.recipientName?.toLowerCase().includes(search) ||
@@ -81,85 +61,60 @@ export async function GET(request) {
       certificates = certificates.filter(cert => cert.isTest === showTest);
     }
 
-    // Sort by issued date (newest first)
     certificates.sort((a, b) => {
       if (!a.issuedAt) return 1;
       if (!b.issuedAt) return -1;
       return new Date(b.issuedAt) - new Date(a.issuedAt);
     });
 
-    // Get total count
     const totalCount = certificates.length;
-
-    // Apply pagination
     certificates = certificates.slice(offset, offset + limit);
 
     return NextResponse.json({
       success: true,
       certificates,
       pagination: {
-        page,
-        limit,
-        totalCount,
+        page, limit, totalCount,
         totalPages: Math.ceil(totalCount / limit),
         hasMore: offset + limit < totalCount,
       },
     });
   } catch (error) {
     console.error('Admin certificates list error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch certificates' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to fetch certificates' }, { status: 500 });
   }
 }
 
 /**
  * DELETE /api/admin/certificates
  * Delete a certificate
- *
- * Request body:
- * - certificateId: ID of certificate to delete
- * - reason: Reason for deletion
  */
 export async function DELETE(request) {
-  // Authenticate admin with CSRF
   const auth = await requireAdminAuth(request, { requireCSRF: true });
   if (!auth.authorized) return auth.response;
 
   try {
+    const db = getAdminDb();
     const body = await request.json();
     const { certificateId, reason } = body;
 
     if (!certificateId) {
-      return NextResponse.json(
-        { success: false, error: 'Certificate ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Certificate ID is required' }, { status: 400 });
     }
 
     if (!reason) {
-      return NextResponse.json(
-        { success: false, error: 'Reason is required for deletion' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Reason is required for deletion' }, { status: 400 });
     }
 
-    // Get certificate details before deletion
-    const certDoc = await getDoc(doc(db, 'certificates', certificateId));
-    if (!certDoc.exists()) {
-      return NextResponse.json(
-        { success: false, error: 'Certificate not found' },
-        { status: 404 }
-      );
+    const certDoc = await db.collection('certificates').doc(certificateId).get();
+    if (!certDoc.exists) {
+      return NextResponse.json({ success: false, error: 'Certificate not found' }, { status: 404 });
     }
 
     const certData = certDoc.data();
 
-    // Delete the certificate
-    await deleteDoc(doc(db, 'certificates', certificateId));
+    await db.collection('certificates').doc(certificateId).delete();
 
-    // Log the action
     await logAdminAction(AUDIT_TYPES.DELETE_CERTIFICATE, auth.session.email, {
       certificateId,
       recipientName: certData.name,
@@ -169,15 +124,9 @@ export async function DELETE(request) {
       reason,
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Certificate deleted successfully',
-    });
+    return NextResponse.json({ success: true, message: 'Certificate deleted successfully' });
   } catch (error) {
     console.error('Admin certificate delete error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete certificate' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to delete certificate' }, { status: 500 });
   }
 }
