@@ -1,7 +1,7 @@
 // app/api/email-capacity/route.js
 // Check email sending capacity across all 6 providers
 
-import { getCapacity, verifyAllProviders } from '@/lib/email-service';
+import { getCapacity, sendEmail, verifyAllProviders } from '@/lib/email-service';
 
 export const dynamic = 'force-dynamic';
 
