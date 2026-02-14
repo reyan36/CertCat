@@ -1,27 +1,27 @@
 // app/api/email-capacity/route.js
-// Check email sending capacity across all 6 providers
+// Check email sending capacity for Gmail provider
 
-import { getCapacity, sendEmail, verifyAllProviders } from '@/lib/email-service';
+import { getCapacity, verifyProvider } from '@/lib/email-service';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const verify = searchParams.get('verify') === 'true';
-  
+
   try {
     const capacity = getCapacity();
-    
-    // Optionally verify all providers (slower, but useful for debugging)
+
+    // Optionally verify Gmail connection (slower, but useful for debugging)
     let verification = null;
     if (verify) {
-      verification = await verifyAllProviders();
+      verification = await verifyProvider();
     }
-    
+
     return Response.json({
       success: true,
       timestamp: new Date().toISOString(),
-      
+
       // Summary
       summary: {
         configured: capacity.configuredCount,
@@ -30,22 +30,22 @@ export async function GET(request) {
         totalRemaining: capacity.total.remaining,
         percentageUsed: capacity.total.percentage,
       },
-      
+
       // Per-provider breakdown
       providers: capacity.providers,
-      
+
       // Human-readable message
       message: capacity.total.remaining > 0
         ? `✅ ${capacity.total.remaining} emails available today (${capacity.configuredCount} providers active)`
         : '⚠️ All providers exhausted for today. Resets at midnight.',
-      
+
       // Verification results (if requested)
       ...(verification && { verification }),
     });
-    
+
   } catch (error) {
-    return Response.json({ 
-      success: false, 
+    return Response.json({
+      success: false,
       error: error.message,
       message: 'Failed to check email capacity',
     }, { status: 500 });
