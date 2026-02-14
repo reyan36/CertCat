@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CertCat
 
-## Getting Started
+## Beautiful Certificates Delivered Instantly
 
-First, run the development server:
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/reyan36/CertCat)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Project Overview
+CertCat is a professional certificate generation and verification platform designed for organizations to create, manage, and deliver stunning, verifiable certificates in minutes. By automating the design and delivery process, CertCat streamlines credential management for workshops, bootcamps, and corporate training programs.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Features
 
-## Learn More
+| Feature | Description |
+| :--- | :--- |
+| **Custom Designs** | Upload your own certificate templates from Figma, Canva, or any design tool for full creative control. |
+| **Secure Verification** | Every certificate includes a unique QR code and verification URL, allowing anyone to instantly validate the credential. |
+| **LinkedIn Integration** | Recipients can boost their professional profiles by adding their new credentials to LinkedIn with a single click. |
+| **Automated Delivery** | Certificates are automatically emailed to participants using professional, customizable templates. |
+| **Bulk Processing** | Upload a participant list via CSV and deliver hundreds of certificates simultaneously in seconds. |
+| **Cloud Hosting** | All generated certificates are hosted on a global CDN for high-speed access and reliability. |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Technologies
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The application is built using a modern, scalable, and performance-focused stack:
 
-## Deploy on Vercel
+- **Frontend**: Next.js, React, Tailwind CSS, Lucide React
+- **Backend**: Next.js API Routes, Firebase Admin SDK
+- **Database**: Firebase Firestore
+- **Utilities**: NodeMailer, React-PDF, QRCode, PapaParse
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Developer
+@Reyan Arshad
+
+### License
+Distributed under the MIT License. See LICENSE for more information.
