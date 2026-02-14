@@ -1,0 +1,168 @@
+// app/api/admin/analytics/route.js
+// Admin API for analytics and metrics
+
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { requireAdminAuth } from '@/lib/admin-middleware';
+import { logAdminAction } from '@/lib/admin-auth';
+import { AUDIT_TYPES } from '@/lib/admin-config';
+
+/**
+ * GET /api/admin/analytics
+ * Get system analytics and metrics
+ *
+ * Query params:
+ * - period: 'day' | 'week' | 'month' | 'all' (default: 'month')
+ */
+export async function GET(request) {
+  // Authenticate admin
+  const auth = await requireAdminAuth(request);
+  if (!auth.authorized) return auth.response;
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || 'month';
+
+    // Calculate date range
+    const now = new Date();
+    let startDate;
+    switch (period) {
+      case 'day':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'all':
+      default:
+        startDate = new Date(0);
+    }
+
+    // Fetch all data (in production, use aggregations or separate collection)
+    const certificatesRef = collection(db, 'certificates');
+    const certificatesSnapshot = await getDocs(certificatesRef);
+
+    const templatesRef = collection(db, 'templates');
+    const templatesSnapshot = await getDocs(templatesRef);
+
+    // Process certificates
+    const allCertificates = certificatesSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        issuedAt: data.issuedAt?.toDate?.() || null,
+        organizerEmail: data.organizerEmail,
+        eventName: data.eventName,
+        isTest: data.isTest || false,
+      };
+    });
+
+    // Filter by period
+    const periodCertificates = allCertificates.filter(cert => {
+      if (!cert.issuedAt) return false;
+      return cert.issuedAt >= startDate;
+    });
+
+    // Calculate metrics
+    const totalCertificates = allCertificates.length;
+    const periodCertificateCount = periodCertificates.length;
+    const testCertificates = allCertificates.filter(c => c.isTest).length;
+
+    // Unique users (organizers)
+    const allOrganizers = new Set(allCertificates.map(c => c.organizerEmail).filter(Boolean));
+    const periodOrganizers = new Set(periodCertificates.map(c => c.organizerEmail).filter(Boolean));
+
+    // Unique events
+    const allEvents = new Set(allCertificates.map(c => c.eventName).filter(Boolean));
+    const periodEvents = new Set(periodCertificates.map(c => c.eventName).filter(Boolean));
+
+    // Templates
+    const totalTemplates = templatesSnapshot.docs.length;
+
+    // Daily breakdown for the period
+    const dailyData = {};
+    periodCertificates.forEach(cert => {
+      if (!cert.issuedAt) return;
+      const dateKey = cert.issuedAt.toISOString().split('T')[0];
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = { certificates: 0, events: new Set(), users: new Set() };
+      }
+      dailyData[dateKey].certificates++;
+      if (cert.eventName) dailyData[dateKey].events.add(cert.eventName);
+      if (cert.organizerEmail) dailyData[dateKey].users.add(cert.organizerEmail);
+    });
+
+    // Convert to array and format
+    const dailyBreakdown = Object.entries(dailyData)
+      .map(([date, data]) => ({
+        date,
+        certificates: data.certificates,
+        events: data.events.size,
+        users: data.users.size,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Top organizers
+    const organizerCounts = {};
+    periodCertificates.forEach(cert => {
+      if (cert.organizerEmail) {
+        organizerCounts[cert.organizerEmail] = (organizerCounts[cert.organizerEmail] || 0) + 1;
+      }
+    });
+
+    const topOrganizers = Object.entries(organizerCounts)
+      .map(([email, count]) => ({ email, certificateCount: count }))
+      .sort((a, b) => b.certificateCount - a.certificateCount)
+      .slice(0, 10);
+
+    // Top events
+    const eventCounts = {};
+    periodCertificates.forEach(cert => {
+      if (cert.eventName) {
+        eventCounts[cert.eventName] = (eventCounts[cert.eventName] || 0) + 1;
+      }
+    });
+
+    const topEvents = Object.entries(eventCounts)
+      .map(([name, count]) => ({ name, certificateCount: count }))
+      .sort((a, b) => b.certificateCount - a.certificateCount)
+      .slice(0, 10);
+
+    // Log the action
+    await logAdminAction(AUDIT_TYPES.VIEW_ANALYTICS, auth.session.email, {
+      period,
+    });
+
+    return NextResponse.json({
+      success: true,
+      analytics: {
+        overview: {
+          totalCertificates,
+          periodCertificates: periodCertificateCount,
+          testCertificates,
+          totalTemplates,
+          totalUsers: allOrganizers.size,
+          periodUsers: periodOrganizers.size,
+          totalEvents: allEvents.size,
+          periodEvents: periodEvents.size,
+        },
+        period,
+        periodStart: startDate.toISOString(),
+        periodEnd: now.toISOString(),
+        dailyBreakdown,
+        topOrganizers,
+        topEvents,
+      },
+    });
+  } catch (error) {
+    console.error('Admin analytics error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch analytics' },
+      { status: 500 }
+    );
+  }
+}
