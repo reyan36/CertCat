@@ -39,8 +39,13 @@ The application is built using a modern, scalable, and performance-focused stack
 
 ---
 
-### Developer
-@Reyan Arshad
+## Developer
 
-### License
-Distributed under the MIT License. See LICENSE for more information.
+- [@Reyan Arshad](https://www.linkedin.com/in/reyan36/)
+
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## © 2026 CertCat All rights reserved
