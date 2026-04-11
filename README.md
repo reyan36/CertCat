@@ -1,14 +1,17 @@
+---
+<div align="center">
+
 # CertCat
-
-## Beautiful Certificates Delivered Instantly
-
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/reyan36/CertCat)
+### beautiful certificates delivered instantly
+[![Version](https://img.shields.io/badge/Version-1.0-blue.svg)](https://github.com/reyan36/CertCat)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)](https://firebase.google.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
+[Website](https://certcat.vercel.app) • [Features](#features) • [Technologies](#technologies) • [Developer](#developer)
+
+</div>
 
 ### Project Overview
 CertCat is a professional certificate generation and verification platform designed for organizations to create, manage, and deliver stunning, verifiable certificates in minutes. By automating the design and delivery process, CertCat streamlines credential management for workshops, bootcamps, and corporate training programs.
