@@ -15,6 +15,12 @@ CertCat is a professional certificate generation and verification platform desig
 
 ---
 
+### Project Overview
+
+<img width="4888" height="3452" alt="diagram" src="https://github.com/user-attachments/assets/8eaf1bf0-2fae-418c-b187-e8800bc5df5e" />
+
+---
+
 ### Features
 
 | Feature | Description |
