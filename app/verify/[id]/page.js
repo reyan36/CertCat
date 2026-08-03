@@ -289,21 +289,21 @@ function PDFDownloadButton({ fileName, elements, backgroundImage }) {
       // Font cache to avoid re-fetching
       const fontCache = {};
 
-      // Google Fonts CDN URLs for TTF files
+      // Reliable CDN URLs for TTF files (fontsource/unpkg via jsdelivr)
       const googleFontUrls = {
-        'great vibes': 'https://fonts.gstatic.com/s/greatvibes/v18/RWmMoKWR9v4ksMfaWd_JN-XCg6UKDXlq.ttf',
-        'dancing script': 'https://fonts.gstatic.com/s/dancingscript/v25/If2cXTr6YS-zF4S-kcSWSVi_sxjsohD9F50Ruu7BMSo3Sup6hNX6plRP.ttf',
-        'pacifico': 'https://fonts.gstatic.com/s/pacifico/v22/FwZY7-Qmy14u9lezJ96A4sijpFu_.ttf',
-        'playfair display': 'https://fonts.gstatic.com/s/playfairdisplay/v36/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQZNLo_U2r.ttf',
-        'merriweather': 'https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l5-fCZM.ttf',
-        'lora': 'https://fonts.gstatic.com/s/lora/v32/0QI6MX1D_JOuGQbT0gvTJPa787weuxJBkqs.ttf',
-        'inter': 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.ttf',
-        'roboto': 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf',
-        'open sans': 'https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVI.ttf',
-        'poppins': 'https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrFJDUc1NECPY.ttf',
-        'montserrat': 'https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.ttf',
-        'oswald': 'https://fonts.gstatic.com/s/oswald/v49/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvsUZiYySUhiCXAA.ttf',
-        'bebas neue': 'https://fonts.gstatic.com/s/bebasneue/v14/JTUSjIg69CK48gW7PXooxW5rygbi49c.ttf',
+        'great vibes': 'https://cdn.jsdelivr.net/fontsource/fonts/great-vibes@latest/latin-400-normal.ttf',
+        'dancing script': 'https://cdn.jsdelivr.net/fontsource/fonts/dancing-script@latest/latin-400-normal.ttf',
+        'pacifico': 'https://cdn.jsdelivr.net/fontsource/fonts/pacifico@latest/latin-400-normal.ttf',
+        'playfair display': 'https://cdn.jsdelivr.net/fontsource/fonts/playfair-display@latest/latin-400-normal.ttf',
+        'merriweather': 'https://cdn.jsdelivr.net/fontsource/fonts/merriweather@latest/latin-400-normal.ttf',
+        'lora': 'https://cdn.jsdelivr.net/fontsource/fonts/lora@latest/latin-400-normal.ttf',
+        'inter': 'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.ttf',
+        'roboto': 'https://cdn.jsdelivr.net/fontsource/fonts/roboto@latest/latin-400-normal.ttf',
+        'open sans': 'https://cdn.jsdelivr.net/fontsource/fonts/open-sans@latest/latin-400-normal.ttf',
+        'poppins': 'https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-400-normal.ttf',
+        'montserrat': 'https://cdn.jsdelivr.net/fontsource/fonts/montserrat@latest/latin-400-normal.ttf',
+        'oswald': 'https://cdn.jsdelivr.net/fontsource/fonts/oswald@latest/latin-400-normal.ttf',
+        'bebas neue': 'https://cdn.jsdelivr.net/fontsource/fonts/bebas-neue@latest/latin-400-normal.ttf',
       };
 
       // Fetch and embed a Google Font
@@ -547,7 +547,7 @@ export default function VerifyPage({ params }) {
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-white">
-      <Image src="/logo.png" alt="CertCat Logo" width={128} height={128} quality={100} priority className="mb-4 w-16 h-16 rounded-xl" />
+      <Image src="/logo.png" alt="CertCat Logo" width={128} height={128} quality={100} priority className="mb-4 w-16 h-16 object-contain" />
       <Loader2 className="animate-spin text-orange-500" size={32} />
       <p className="text-gray-500 mt-4">Verifying certificate...</p>
     </div>
@@ -594,7 +594,7 @@ export default function VerifyPage({ params }) {
       <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Image src="/logo.png" alt="CertCat Logo" width={64} height={64} quality={100} priority className="w-8 h-8 rounded-lg" />
+            <Image src="/logo.png" alt="CertCat Logo" width={64} height={64} quality={100} priority className="w-8 h-8 object-contain" />
             <span className="font-bold">CertCat</span>
           </div>
           <button onClick={() => setShowShareModal(true)} className="p-2 hover:bg-gray-100 rounded-lg"><Share2 size={18} /></button>
